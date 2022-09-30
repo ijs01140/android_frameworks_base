@@ -1,0 +1,5 @@
+version: "1"
+rules:
+  - base: lineage-19.1
+    upstream: LineageOS:lineage-19.1
+    mergeMethod: merge
