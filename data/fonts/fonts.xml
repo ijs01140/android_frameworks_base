@@ -228,6 +228,11 @@
         <font weight="400" style="italic">NotoSerif-Italic.ttf</font>
         <font weight="700" style="italic">NotoSerif-BoldItalic.ttf</font>
     </family>
+    <alias name="serif-thin" to="serif" weight="100" />
+    <alias name="serif-light" to="serif" weight="300" />
+    <alias name="serif-medium" to="serif" weight="400" />
+    <alias name="serif-semi-bold" to="serif" weight="500" />
+    <alias name="serif-black" to="serif" weight="900" />
     <alias name="serif-bold" to="serif" weight="700" />
     <alias name="times" to="serif" />
     <alias name="times new roman" to="serif" />
@@ -1301,35 +1306,235 @@
         <font weight="400" style="normal">NotoSansSymbols-Regular-Subsetted.ttf</font>
     </family>
     <family lang="zh-Hans">
-        <font weight="400" style="normal" index="2" postScriptName="NotoSansCJKjp-Regular">
-            NotoSansCJK-Regular.ttc
+        <font style="normal" index="2" postScriptName="NotoSansCJKsc-Regular" weight="100">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="100" tag="wght" />
         </font>
-        <font weight="400" style="normal" index="2" fallbackFor="serif"
-              postScriptName="NotoSerifCJKjp-Regular">NotoSerifCJK-Regular.ttc
+        <font style="normal" index="2" postScriptName="NotoSansCJKsc-Regular" weight="300">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="300" tag="wght" />
+        </font>
+        <font style="normal" index="2" postScriptName="NotoSansCJKsc-Regular" weight="400">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="400" tag="wght" />
+        </font>
+        <font style="normal" index="2" postScriptName="NotoSansCJKsc-Regular" weight="500">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="500" tag="wght" />
+        </font>
+        <font style="normal" index="2" postScriptName="NotoSansCJKsc-Regular" weight="600">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="600" tag="wght" />
+        </font>
+        <font style="normal" index="2" postScriptName="NotoSansCJKsc-Regular" weight="700">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="700" tag="wght" />
+        </font>
+        <font style="normal" index="2" postScriptName="NotoSansCJKsc-Regular" weight="900">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="900" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="2" postScriptName="NotoSerifCJKsc-Regular"
+            weight="200">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="200" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="2" postScriptName="NotoSerifCJKsc-Regular"
+            weight="300">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="300" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="2" postScriptName="NotoSerifCJKsc-Regular"
+            weight="400">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="400" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="2" postScriptName="NotoSerifCJKsc-Regular"
+            weight="500">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="500" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="2" postScriptName="NotoSerifCJKsc-Regular"
+            weight="600">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="600" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="2" postScriptName="NotoSerifCJKsc-Regular"
+            weight="700">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="700" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="2" postScriptName="NotoSerifCJKsc-Regular"
+            weight="900">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="900" tag="wght" />
         </font>
     </family>
     <family lang="zh-Hant,zh-Bopo">
-        <font weight="400" style="normal" index="3" postScriptName="NotoSansCJKjp-Regular">
-            NotoSansCJK-Regular.ttc
+        <font style="normal" index="3" postScriptName="NotoSansCJKtc-Regular" weight="100">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="100" tag="wght" />
         </font>
-        <font weight="400" style="normal" index="3" fallbackFor="serif"
-              postScriptName="NotoSerifCJKjp-Regular">NotoSerifCJK-Regular.ttc
+        <font style="normal" index="3" postScriptName="NotoSansCJKtc-Regular" weight="300">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="300" tag="wght" />
+        </font>
+        <font style="normal" index="3" postScriptName="NotoSansCJKtc-Regular" weight="400">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="400" tag="wght" />
+        </font>
+        <font style="normal" index="3" postScriptName="NotoSansCJKtc-Regular" weight="500">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="500" tag="wght" />
+        </font>
+        <font style="normal" index="3" postScriptName="NotoSansCJKtc-Regular" weight="600">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="600" tag="wght" />
+        </font>
+        <font style="normal" index="3" postScriptName="NotoSansCJKtc-Regular" weight="700">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="700" tag="wght" />
+        </font>
+        <font style="normal" index="3" postScriptName="NotoSansCJKtc-Regular" weight="900">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="900" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="3" postScriptName="NotoSerifCJKtc-Regular"
+            weight="200">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="200" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="3" postScriptName="NotoSerifCJKtc-Regular"
+            weight="300">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="300" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="3" postScriptName="NotoSerifCJKtc-Regular"
+            weight="400">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="400" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="3" postScriptName="NotoSerifCJKtc-Regular"
+            weight="500">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="500" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="3" postScriptName="NotoSerifCJKtc-Regular"
+            weight="600">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="600" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="3" postScriptName="NotoSerifCJKtc-Regular"
+            weight="700">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="700" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="3" postScriptName="NotoSerifCJKtc-Regular"
+            weight="900">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="900" tag="wght" />
         </font>
     </family>
     <family lang="ja">
-        <font weight="400" style="normal" index="0" postScriptName="NotoSansCJKjp-Regular">
-            NotoSansCJK-Regular.ttc
+        <font style="normal" index="0" postScriptName="NotoSansCJKjp-Regular" weight="100">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="100" tag="wght" />
         </font>
-        <font weight="400" style="normal" index="0" fallbackFor="serif"
-              postScriptName="NotoSerifCJKjp-Regular">NotoSerifCJK-Regular.ttc
+        <font style="normal" index="0" postScriptName="NotoSansCJKjp-Regular" weight="300">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="300" tag="wght" />
+        </font>
+        <font style="normal" index="0" postScriptName="NotoSansCJKjp-Regular" weight="400">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="400" tag="wght" />
+        </font>
+        <font style="normal" index="0" postScriptName="NotoSansCJKjp-Regular" weight="500">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="500" tag="wght" />
+        </font>
+        <font style="normal" index="0" postScriptName="NotoSansCJKjp-Regular" weight="600">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="600" tag="wght" />
+        </font>
+        <font style="normal" index="0" postScriptName="NotoSansCJKjp-Regular" weight="700">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="700" tag="wght" />
+        </font>
+        <font style="normal" index="0" postScriptName="NotoSansCJKjp-Regular" weight="900">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="900" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="0" postScriptName="NotoSerifCJKjp-Regular"
+            weight="200">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="200" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="0" postScriptName="NotoSerifCJKjp-Regular"
+            weight="300">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="300" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="0" postScriptName="NotoSerifCJKjp-Regular"
+            weight="400">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="400" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="0" postScriptName="NotoSerifCJKjp-Regular"
+            weight="500">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="500" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="0" postScriptName="NotoSerifCJKjp-Regular"
+            weight="600">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="600" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="0" postScriptName="NotoSerifCJKjp-Regular"
+            weight="700">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="700" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="0" postScriptName="NotoSerifCJKjp-Regular"
+            weight="900">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="900" tag="wght" />
         </font>
     </family>
     <family lang="ko">
-        <font weight="400" style="normal" index="1" postScriptName="NotoSansCJKjp-Regular">
-            NotoSansCJK-Regular.ttc
+        <font style="normal" index="1" postScriptName="NotoSansCJKkr-Regular" weight="100">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="100" tag="wght" />
         </font>
-        <font weight="400" style="normal" index="1" fallbackFor="serif"
-              postScriptName="NotoSerifCJKjp-Regular">NotoSerifCJK-Regular.ttc
+        <font style="normal" index="1" postScriptName="NotoSansCJKkr-Regular" weight="300">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="300" tag="wght" />
+        </font>
+        <font style="normal" index="1" postScriptName="NotoSansCJKkr-Regular" weight="400">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="400" tag="wght" />
+        </font>
+        <font style="normal" index="1" postScriptName="NotoSansCJKkr-Regular" weight="500">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="500" tag="wght" />
+        </font>
+        <font style="normal" index="1" postScriptName="NotoSansCJKkr-Regular" weight="600">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="600" tag="wght" />
+        </font>
+        <font style="normal" index="1" postScriptName="NotoSansCJKkr-Regular" weight="700">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="700" tag="wght" />
+        </font>
+        <font style="normal" index="1" postScriptName="NotoSansCJKkr-Regular" weight="900">
+            NotoSansCJK-VF.otf.ttc
+            <axis stylevalue="900" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="1" postScriptName="NotoSerifCJKkr-Regular"
+            weight="200">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="200" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="1" postScriptName="NotoSerifCJKkr-Regular"
+            weight="300">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="300" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="1" postScriptName="NotoSerifCJKkr-Regular"
+            weight="400">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="400" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="1" postScriptName="NotoSerifCJKkr-Regular"
+            weight="500">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="500" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="1" postScriptName="NotoSerifCJKkr-Regular"
+            weight="600">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="600" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="1" postScriptName="NotoSerifCJKkr-Regular"
+            weight="700">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="700" tag="wght" />
+        </font>
+        <font style="normal" fallbackFor="serif" index="1" postScriptName="NotoSerifCJKkr-Regular"
+            weight="900">NotoSerifCJK-VF.otf.ttc
+            <axis stylevalue="900" tag="wght" />
         </font>
     </family>
     <family lang="und-Zsye" ignore="true">
