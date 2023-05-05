@@ -222,7 +222,8 @@ public class CameraCaptureSessionImpl extends CameraCaptureSession
         } else if (request.isReprocess() && !isReprocessable()) {
             throw new IllegalArgumentException("this capture session cannot handle reprocess " +
                     "requests");
-        } else if (request.isReprocess() && request.getReprocessableSessionId() != mId) {
+        } else if (!mDeviceImpl.isPrivilegedApp() &&
+                request.isReprocess() && request.getReprocessableSessionId() != mId) {
             throw new IllegalArgumentException("capture request was created for another session");
         }
     }
@@ -648,6 +649,21 @@ public class CameraCaptureSessionImpl extends CameraCaptureSession
                     final long ident = Binder.clearCallingIdentity();
                     try {
                         executor.execute(() -> callback.onCaptureStarted(
+                                    CameraCaptureSessionImpl.this, request, timestamp,
+                                    frameNumber));
+                    } finally {
+                        Binder.restoreCallingIdentity(ident);
+                    }
+                }
+            }
+
+            @Override
+            public void onReadoutStarted(CameraDevice camera,
+                    CaptureRequest request, long timestamp, long frameNumber) {
+                if ((callback != null) && (executor != null)) {
+                    final long ident = Binder.clearCallingIdentity();
+                    try {
+                        executor.execute(() -> callback.onReadoutStarted(
                                     CameraCaptureSessionImpl.this, request, timestamp,
                                     frameNumber));
                     } finally {

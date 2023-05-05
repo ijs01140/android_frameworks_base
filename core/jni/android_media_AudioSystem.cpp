@@ -611,7 +611,8 @@ static jint android_media_AudioSystem_setDeviceConnectionState(JNIEnv *env, jobj
                     AudioSystem::setDeviceConnectionState(static_cast<audio_policy_dev_state_t>(
                                                                   state),
                                                           port,
-                                                          static_cast<audio_format_t>(codec)));
+                                                          static_cast<audio_format_t>(codec)),
+                                               {INVALID_OPERATION});
         } else {
             ALOGE("Failed to read from parcel: %s", statusToString(statusOfParcel).c_str());
             status = kAudioStatusError;
@@ -2937,13 +2938,14 @@ static jint android_media_AudioSystem_getDirectProfilesForAttributes(JNIEnv *env
 
     for (const auto &audioProfile : audioProfiles) {
         jobject jAudioProfile;
-        jStatus = convertAudioProfileFromNative(env, &jAudioProfile, &audioProfile, false);
-        if (jStatus == AUDIO_JAVA_BAD_VALUE) {
+        jint jConvertProfileStatus = convertAudioProfileFromNative(
+                                        env, &jAudioProfile, &audioProfile, false);
+        if (jConvertProfileStatus == AUDIO_JAVA_BAD_VALUE) {
             // skipping Java layer unsupported audio formats
             continue;
         }
-        if (jStatus != AUDIO_JAVA_SUCCESS) {
-            return jStatus;
+        if (jConvertProfileStatus != AUDIO_JAVA_SUCCESS) {
+            return jConvertProfileStatus;
         }
         env->CallBooleanMethod(jAudioProfilesList, gArrayListMethods.add, jAudioProfile);
         env->DeleteLocalRef(jAudioProfile);

@@ -90,11 +90,14 @@ public enum ScrimState {
     AUTH_SCRIMMED_SHADE {
         @Override
         public void prepare(ScrimState previousState) {
-            // notif & behind scrim alpha values are determined by ScrimController#applyState
+            // notif scrim alpha values are determined by ScrimController#applyState
             // based on the shade expansion
 
             mFrontTint = Color.BLACK;
             mFrontAlpha = .66f;
+
+            mBehindTint = Color.BLACK;
+            mBehindAlpha = 1f;
         }
     },
 
@@ -148,12 +151,6 @@ public enum ScrimState {
             if (mClipQsScrim) {
                 updateScrimColor(mScrimBehind, 1f /* alpha */, Color.TRANSPARENT);
             }
-        }
-
-        // to make sure correct color is returned before "prepare" is called
-        @Override
-        public int getBehindTint() {
-            return Color.TRANSPARENT;
         }
     },
 
@@ -252,7 +249,7 @@ public enum ScrimState {
             mBehindTint = Color.TRANSPARENT;
             mBlankScreen = false;
 
-            if (previousState == ScrimState.AOD) {
+            if (mDisplayRequiresBlanking && previousState == ScrimState.AOD) {
                 // Set all scrims black, before they fade transparent.
                 updateScrimColor(mScrimInFront, 1f /* alpha */, Color.BLACK /* tint */);
                 updateScrimColor(mScrimBehind, 1f /* alpha */, Color.TRANSPARENT /* tint */);

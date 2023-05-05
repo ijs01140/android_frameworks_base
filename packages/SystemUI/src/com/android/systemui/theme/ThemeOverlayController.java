@@ -84,6 +84,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -105,7 +106,7 @@ import javax.inject.Inject;
  * associated work profiles
  */
 @SysUISingleton
-public class ThemeOverlayController extends CoreStartable implements Dumpable {
+public class ThemeOverlayController implements CoreStartable, Dumpable {
     protected static final String TAG = "ThemeOverlayController";
     protected static final String OVERLAY_BERRY_BLACK_THEME =
             "org.lineageos.overlay.customization.blacktheme";
@@ -122,6 +123,8 @@ public class ThemeOverlayController extends CoreStartable implements Dumpable {
     private final SystemSettings mSystemSettings;
     private final Executor mMainExecutor;
     private final Handler mBgHandler;
+    private final boolean mIsMonochromaticEnabled;
+    private final Context mContext;
     private final boolean mIsMonetEnabled;
     private final UserTracker mUserTracker;
     private final ConfigurationController mConfigurationController;
@@ -189,6 +192,10 @@ public class ThemeOverlayController extends CoreStartable implements Dumpable {
 
         @Override
         public void onColorsChanged(WallpaperColors wallpaperColors, int which, int userId) {
+            WallpaperColors currentColors = mCurrentColors.get(userId);
+            if (wallpaperColors != null && wallpaperColors.equals(currentColors)) {
+                return;
+            }
             boolean currentUser = userId == mUserTracker.getUserId();
             if (currentUser && !mAcceptColorEvents
                     && mWakefulnessLifecycle.getWakefulness() != WAKEFULNESS_ASLEEP) {
@@ -267,7 +274,8 @@ public class ThemeOverlayController extends CoreStartable implements Dumpable {
         final int currentUser = mUserTracker.getUserId();
         final boolean hadWallpaperColors = mCurrentColors.get(userId) != null;
         int latestWallpaperType = getLatestWallpaperType(userId);
-        if ((flags & latestWallpaperType) != 0) {
+        boolean eventForLatestWallpaper = (flags & latestWallpaperType) != 0;
+        if (eventForLatestWallpaper) {
             mCurrentColors.put(userId, wallpaperColors);
             if (DEBUG) Log.d(TAG, "got new colors: " + wallpaperColors + " where: " + flags);
         }
@@ -303,14 +311,19 @@ public class ThemeOverlayController extends CoreStartable implements Dumpable {
                 currentUser);
         boolean isDestinationBoth = (flags == (WallpaperManager.FLAG_SYSTEM
                 | WallpaperManager.FLAG_LOCK));
+        boolean isDestinationHomeOnly = (flags == WallpaperManager.FLAG_SYSTEM);
         try {
             JSONObject jsonObject = (overlayPackageJson == null) ? new JSONObject()
                     : new JSONObject(overlayPackageJson);
             // The latest applied wallpaper should be the source of system colors when:
             // There is not preset color applied and the incoming wallpaper color is not applied
-            if (!COLOR_SOURCE_PRESET.equals(jsonObject.optString(OVERLAY_COLOR_SOURCE))
-                    && ((flags & latestWallpaperType) != 0 && !isSeedColorSet(jsonObject,
-                    wallpaperColors))) {
+            String wallpaperPickerColorSource = jsonObject.optString(OVERLAY_COLOR_SOURCE);
+            boolean userChosePresetColor = COLOR_SOURCE_PRESET.equals(wallpaperPickerColorSource);
+            boolean userChoseLockScreenColor = COLOR_SOURCE_LOCK.equals(wallpaperPickerColorSource);
+            boolean preserveLockScreenColor = isDestinationHomeOnly && userChoseLockScreenColor;
+
+            if (!userChosePresetColor && !preserveLockScreenColor && eventForLatestWallpaper
+                    && !isSeedColorSet(jsonObject, wallpaperColors)) {
                 mSkipSettingChange = true;
                 if (jsonObject.has(OVERLAY_CATEGORY_ACCENT_COLOR) || jsonObject.has(
                         OVERLAY_CATEGORY_SYSTEM_PALETTE)) {
@@ -370,13 +383,14 @@ public class ThemeOverlayController extends CoreStartable implements Dumpable {
     public ThemeOverlayController(Context context, BroadcastDispatcher broadcastDispatcher,
             @Background Handler bgHandler, @Main Executor mainExecutor,
             @Background Executor bgExecutor, ThemeOverlayApplier themeOverlayApplier,
-            SecureSettings secureSettings, WallpaperManager wallpaperManager,
+            SecureSettings secureSettings, SystemSettings systemSettings,
+            WallpaperManager wallpaperManager,
             UserManager userManager, DeviceProvisionedController deviceProvisionedController,
             UserTracker userTracker, DumpManager dumpManager, FeatureFlags featureFlags,
             @Main Resources resources, WakefulnessLifecycle wakefulnessLifecycle,
-            SystemSettings systemSettings, ConfigurationController configurationController) {
-        super(context);
-
+            ConfigurationController configurationController) {
+        mContext = context;
+        mIsMonochromaticEnabled = featureFlags.isEnabled(Flags.MONOCHROMATIC_THEMES);
         mIsMonetEnabled = featureFlags.isEnabled(Flags.MONET);
         mConfigurationController = configurationController;
         mDeviceProvisionedController = deviceProvisionedController;
@@ -717,7 +731,7 @@ public class ThemeOverlayController extends CoreStartable implements Dumpable {
         }
         if (mNeedsOverlayCreation) {
             mNeedsOverlayCreation = false;
-            mThemeManager.applyCurrentUserOverlays(categoryToPackage, new FabricatedOverlay[] {
+            mThemeManager.applyCurrentUserOverlays(categoryToPackage, new FabricatedOverlay[]{
                     mSecondaryOverlay, mNeutralOverlay
             }, currentUser, managedProfiles);
         } else {
@@ -730,8 +744,13 @@ public class ThemeOverlayController extends CoreStartable implements Dumpable {
         // Allow-list of Style objects that can be created from a setting string, i.e. can be
         // used as a system-wide theme.
         // - Content intentionally excluded, intended for media player, not system-wide
-        List<Style> validStyles = Arrays.asList(Style.EXPRESSIVE, Style.SPRITZ, Style.TONAL_SPOT,
-                Style.FRUIT_SALAD, Style.RAINBOW, Style.VIBRANT);
+        List<Style> validStyles = new ArrayList<>(Arrays.asList(Style.EXPRESSIVE, Style.SPRITZ,
+                Style.TONAL_SPOT, Style.FRUIT_SALAD, Style.RAINBOW, Style.VIBRANT));
+
+        if (mIsMonochromaticEnabled) {
+            validStyles.add(Style.MONOCHROMATIC);
+        }
+
         Style style = mThemeStyle;
         final String overlayPackageJson = mSecureSettings.getStringForUser(
                 Settings.Secure.THEME_CUSTOMIZATION_OVERLAY_PACKAGES,
