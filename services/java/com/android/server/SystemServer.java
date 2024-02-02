@@ -65,6 +65,7 @@ import android.os.Environment;
 import android.os.FactoryTest;
 import android.os.FileUtils;
 import android.os.IBinder;
+import android.os.IBinderCallback;
 import android.os.IIncidentManager;
 import android.os.Looper;
 import android.os.Message;
@@ -232,6 +233,9 @@ import java.io.File;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -876,7 +880,7 @@ public final class SystemServer implements Dumpable {
             initZygoteChildHeapProfiling();
 
             // Debug builds - spawn a thread to monitor for fd leaks.
-            if (Build.IS_DEBUGGABLE) {
+            if (Build.IS_ENG) {
                 spawnFdLeakCheckThread();
             }
 
@@ -968,6 +972,14 @@ public final class SystemServer implements Dumpable {
                         "SystemServer init took too long. uptimeMillis=" + uptimeMillis);
             }
         }
+
+        // Set binder transaction callback after starting system services
+        Binder.setTransactionCallback(new IBinderCallback() {
+            @Override
+            public void onTransactionError(int pid, int code, int flags, int err) {
+                mActivityManagerService.frozenBinderTransactionDetected(pid, code, flags, err);
+            }
+        });
 
         // Loop forever.
         Looper.loop();
@@ -2717,6 +2729,26 @@ public final class SystemServer implements Dumpable {
         t.traceBegin("startTracingServiceProxy");
         mSystemServiceManager.startService(TracingServiceProxy.class);
         t.traceEnd();
+
+        // Lineage Services
+        String externalServer = context.getResources().getString(
+                org.lineageos.platform.internal.R.string.config_externalSystemServer);
+        final Class<?> serverClazz;
+        try {
+            serverClazz = Class.forName(externalServer);
+            final Constructor<?> constructor = serverClazz.getDeclaredConstructor(Context.class);
+            constructor.setAccessible(true);
+            final Object baseObject = constructor.newInstance(mSystemContext);
+            final Method method = baseObject.getClass().getDeclaredMethod("run");
+            method.setAccessible(true);
+            method.invoke(baseObject);
+        } catch (ClassNotFoundException
+                | IllegalAccessException
+                | InvocationTargetException
+                | InstantiationException
+                | NoSuchMethodException e) {
+            reportWtf("Making " + externalServer + " ready", e);
+        }
 
         // It is now time to start up the app processes...
 

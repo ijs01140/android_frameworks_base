@@ -114,13 +114,11 @@ public class TileQueryHelper {
                 possibleTiles.add(spec);
             }
         }
-        if (Build.IS_DEBUGGABLE && !current.contains(GarbageMonitor.MemoryTile.TILE_SPEC)) {
+        if (Build.IS_ENG && !current.contains(GarbageMonitor.MemoryTile.TILE_SPEC)) {
             possibleTiles.add(GarbageMonitor.MemoryTile.TILE_SPEC);
         }
 
         final ArrayList<QSTile> tilesToAdd = new ArrayList<>();
-        possibleTiles.remove("cell");
-        possibleTiles.remove("wifi");
 
         for (String spec : possibleTiles) {
             // Only add current and stock tiles that can be created from QSFactoryImpl.

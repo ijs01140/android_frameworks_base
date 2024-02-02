@@ -8582,17 +8582,20 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
         final CallerIdentity caller = getCallerIdentity(callerPackage);
         Preconditions.checkCallAuthorization(hasFullCrossUsersPermission(caller, userHandle));
 
-
-        final ApplicationInfo ai;
-        try {
-            ai = mIPackageManager.getApplicationInfo(callerPackage, 0, userHandle);
-        } catch (RemoteException e) {
-            throw new SecurityException(e);
-        }
-
         boolean legacyApp = false;
-        if (ai.targetSdkVersion <= Build.VERSION_CODES.M) {
-            legacyApp = true;
+        // callerPackage can only be null if we were called from within the system,
+        // which means that we are not a legacy app.
+        if (callerPackage != null) {
+            final ApplicationInfo ai;
+            try {
+                ai = mIPackageManager.getApplicationInfo(callerPackage, 0, userHandle);
+            } catch (RemoteException e) {
+                throw new SecurityException(e);
+            }
+
+            if (ai.targetSdkVersion <= Build.VERSION_CODES.M) {
+                legacyApp = true;
+            }
         }
 
         final int rawStatus = getEncryptionStatus();
@@ -9450,6 +9453,30 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
                 .setInt(which)
                 .setStrings(parent ? CALLED_FROM_PARENT : NOT_CALLED_FROM_PARENT)
                 .write();
+    }
+
+    /**
+     * @hide
+     */
+    @Override
+    public boolean requireSecureKeyguard(int userHandle) {
+        if (!mHasFeature) {
+            return false;
+        }
+
+        int passwordQuality = getPasswordQuality(null, userHandle, false);
+        if (passwordQuality > DevicePolicyManager.PASSWORD_QUALITY_UNSPECIFIED) {
+            return true;
+        }
+
+        int encryptionStatus = getStorageEncryptionStatus(null, userHandle);
+        if (encryptionStatus == DevicePolicyManager.ENCRYPTION_STATUS_ACTIVE
+                || encryptionStatus == DevicePolicyManager.ENCRYPTION_STATUS_ACTIVATING) {
+            return true;
+        }
+
+        final int keyguardDisabledFeatures = getKeyguardDisabledFeatures(null, userHandle, false);
+        return (keyguardDisabledFeatures & DevicePolicyManager.KEYGUARD_DISABLE_TRUST_AGENTS) != 0;
     }
 
     /**
@@ -21645,7 +21672,7 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
                 }
             }
 
-            onCreateAndProvisionManagedProfileCompleted(provisioningParams);
+            onCreateAndProvisionManagedProfileCompleted(userInfo.id, provisioningParams);
 
             sendProvisioningCompletedBroadcast(
                     userInfo.id,
@@ -21717,8 +21744,17 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
      *
      * <p>This method is meant to be overridden by OEMs.
      */
-    private void onCreateAndProvisionManagedProfileCompleted(
-            ManagedProfileProvisioningParams provisioningParams) {}
+    private void onCreateAndProvisionManagedProfileCompleted(int userId,
+            ManagedProfileProvisioningParams provisioningParams) {
+        try {
+            Set<Integer> uids = ConnectivitySettingsManager.getUidsAllowedOnRestrictedNetworks(
+                    mContext);
+            uids.add(mContext.getPackageManager().getPackageUidAsUser(
+                    provisioningParams.getOwnerName(), userId));
+            ConnectivitySettingsManager.setUidsAllowedOnRestrictedNetworks(mContext, uids);
+        } catch (NameNotFoundException ignored) {
+        }
+    }
 
     private void maybeInstallDevicePolicyManagementRoleHolderInUser(int targetUserId) {
         String devicePolicyManagerRoleHolderPackageName =

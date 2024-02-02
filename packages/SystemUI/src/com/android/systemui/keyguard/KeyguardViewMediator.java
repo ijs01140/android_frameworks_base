@@ -2249,6 +2249,8 @@ public class KeyguardViewMediator implements CoreStartable, Dumpable,
         if (mLockPatternUtils.isLockScreenDisabled(KeyguardUpdateMonitor.getCurrentUser())
                 && !lockedOrMissing && !forceShow) {
             if (DEBUG) Log.d(TAG, "doKeyguard: not showing because lockscreen is off");
+            setShowingLocked(false, mAodShowing);
+            hideLocked();
             return;
         }
 
@@ -3144,7 +3146,9 @@ public class KeyguardViewMediator implements CoreStartable, Dumpable,
         // only play "unlock" noises if not on a call (since the incall UI
         // disables the keyguard)
         if (TelephonyManager.EXTRA_STATE_IDLE.equals(mPhoneState)) {
-            playSounds(false);
+            if (mShowing && mDeviceInteractive) {
+                playSounds(false);
+            }
         }
 
         setShowingLocked(false);

@@ -3560,6 +3560,14 @@ public class WindowManagerService extends IWindowManager.Stub
 
     // Called by window manager policy.  Not exposed externally.
     @Override
+    public void reboot(boolean confirm, String reason) {
+        // Pass in the UI context, since ShutdownThread requires it (to show UI).
+        ShutdownThread.rebootCustom(ActivityThread.currentActivityThread().getSystemUiContext(),
+                reason, confirm);
+    }
+
+    // Called by window manager policy.  Not exposed externally.
+    @Override
     public void rebootSafeMode(boolean confirm) {
         // Pass in the UI context, since ShutdownThread requires it (to show UI).
         ShutdownThread.rebootSafeMode(ActivityThread.currentActivityThread().getSystemUiContext(),
@@ -7096,6 +7104,7 @@ public class WindowManagerService extends IWindowManager.Stub
         return mRoot.getDisplayContent(DEFAULT_DISPLAY);
     }
 
+    @Override
     public void onOverlayChanged() {
         // Post to display thread so it can get the latest display info.
         mH.post(() -> {

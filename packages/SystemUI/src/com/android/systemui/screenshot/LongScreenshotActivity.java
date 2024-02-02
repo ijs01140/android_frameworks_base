@@ -200,12 +200,21 @@ public class LongScreenshotActivity extends Activity {
             mCacheLoadFuture = null;
         } else {
             LongScreenshot longScreenshot = mLongScreenshotHolder.takeLongScreenshot();
+            setMagnification(mLongScreenshotHolder.getNeedsMagnification());
             if (longScreenshot != null) {
                 onLongScreenshotReceived(longScreenshot);
             } else {
                 Log.e(TAG, "No long screenshot available!");
                 finishAndRemoveTask();
             }
+        }
+    }
+
+    private void setMagnification(boolean status) {
+        if (status) {
+            mCropView.setCropInteractionListener(mMagnifierView);
+        } else {
+            mCropView.setCropInteractionListener(null);
         }
     }
 
@@ -405,7 +414,7 @@ public class LongScreenshotActivity extends Activity {
         mOutputBitmap = renderBitmap(drawable, bounds);
         ListenableFuture<ImageExporter.Result> exportFuture = mImageExporter.export(
                 mBackgroundExecutor, UUID.randomUUID(), mOutputBitmap, ZonedDateTime.now(),
-                mScreenshotUserHandle);
+                mScreenshotUserHandle, mLongScreenshotHolder.getForegroundAppName());
         exportFuture.addListener(() -> onExportCompleted(action, exportFuture), mUiExecutor);
     }
 

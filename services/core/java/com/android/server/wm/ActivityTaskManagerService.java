@@ -280,6 +280,8 @@ import com.android.server.uri.NeededUriGrants;
 import com.android.server.uri.UriGrantsManagerInternal;
 import com.android.server.wallpaper.WallpaperManagerInternal;
 
+import org.lineageos.internal.applications.LineageActivityManager;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileDescriptor;
@@ -790,6 +792,9 @@ public class ActivityTaskManagerService extends IActivityTaskManager.Stub {
 
     private Set<Integer> mProfileOwnerUids = new ArraySet<Integer>();
 
+    // Lineage sdk activity related helper
+    private LineageActivityManager mLineageActivityManager;
+
     private final class SettingObserver extends ContentObserver {
         private final Uri mFontScaleUri = Settings.System.getUriFor(FONT_SCALE);
         private final Uri mHideErrorDialogsUri = Settings.Global.getUriFor(HIDE_ERROR_DIALOGS);
@@ -887,6 +892,10 @@ public class ActivityTaskManagerService extends IActivityTaskManager.Stub {
 
     public void installSystemProviders() {
         mSettingsObserver = new SettingObserver();
+
+        // LineageActivityManager depends on settings so we can initialize only
+        // after providers are available.
+        mLineageActivityManager = new LineageActivityManager(mContext);
     }
 
     public void retrieveSettings(ContentResolver resolver) {
@@ -3836,6 +3845,19 @@ public class ActivityTaskManagerService extends IActivityTaskManager.Stub {
                 return getCurrentUserId();
             }
             return mLastResumedActivity.mUserId;
+        }
+    }
+
+    /** Return the uid of the last resumed activity. */
+    @Override
+    public int getLastResumedActivityUid() {
+        mAmInternal.enforceCallingPermission(
+                Manifest.permission.INTERACT_ACROSS_USERS_FULL, "getLastResumedActivityUserId()");
+        synchronized (mGlobalLock) {
+            if (mLastResumedActivity == null) {
+                return 0;
+            }
+            return mLastResumedActivity.getUid();
         }
     }
 
@@ -7140,5 +7162,9 @@ public class ActivityTaskManagerService extends IActivityTaskManager.Stub {
         public void unregisterTaskStackListener(ITaskStackListener listener) {
             ActivityTaskManagerService.this.unregisterTaskStackListener(listener);
         }
+    }
+
+    public boolean shouldForceLongScreen(String packageName) {
+        return mLineageActivityManager.shouldForceLongScreen(packageName);
     }
 }

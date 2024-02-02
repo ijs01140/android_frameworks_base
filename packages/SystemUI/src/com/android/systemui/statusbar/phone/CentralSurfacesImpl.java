@@ -61,6 +61,7 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
+import android.database.ContentObserver;
 import android.graphics.Point;
 import android.hardware.devicestate.DeviceStateManager;
 import android.hardware.fingerprint.FingerprintManager;
@@ -255,6 +256,8 @@ import com.android.wm.shell.startingsurface.SplashscreenContentDrawer;
 import com.android.wm.shell.startingsurface.StartingSurface;
 
 import dagger.Lazy;
+
+import lineageos.providers.LineageSettings;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -952,6 +955,45 @@ public class CentralSurfacesImpl implements CoreStartable, CentralSurfaces {
 
         mColorExtractor.addOnColorsChangedListener(mOnColorsChangedListener);
 
+        mNeedsNavigationBar = mContext.getResources().getBoolean(
+                com.android.internal.R.bool.config_showNavigationBar);
+        // Allow a system property to override this. Used by the emulator.
+        // See also hasNavigationBar().
+        String navBarOverride = SystemProperties.get("qemu.hw.mainkeys");
+        if ("1".equals(navBarOverride)) {
+            mNeedsNavigationBar = false;
+        } else if ("0".equals(navBarOverride)) {
+            mNeedsNavigationBar = true;
+        }
+
+        ContentObserver contentObserver = new ContentObserver(null) {
+            @Override
+            public void onChange(boolean selfChange) {
+                if (mDisplayId == Display.DEFAULT_DISPLAY
+                        && mWindowManagerService != null) {
+                    boolean forcedVisibility = mNeedsNavigationBar || LineageSettings.System.getInt(
+                            mContext.getContentResolver(),
+                            LineageSettings.System.FORCE_SHOW_NAVBAR, 0) != 0;
+                    boolean hasNavbar = getNavigationBarView() != null;
+                    mContext.getMainExecutor().execute(() -> {
+                        if (forcedVisibility) {
+                            if (!hasNavbar) {
+                                mNavigationBarController.onDisplayReady(mDisplayId);
+                            }
+                        } else {
+                            if (hasNavbar) {
+                                mNavigationBarController.onDisplayRemoved(mDisplayId);
+                            }
+                        }
+                    });
+                }
+            }
+        };
+        mContext.getContentResolver().registerContentObserver(
+                LineageSettings.System.getUriFor(LineageSettings.System.FORCE_SHOW_NAVBAR), false,
+                contentObserver);
+        contentObserver.onChange(true);
+
         mWindowManager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
 
         mDisplay = mContext.getDisplay();
@@ -1536,6 +1578,7 @@ public class CentralSurfacesImpl implements CoreStartable, CentralSurfaces {
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
         filter.addAction(Intent.ACTION_SCREEN_OFF);
+        filter.addAction(lineageos.content.Intent.ACTION_SCREEN_CAMERA_GESTURE);
         mBroadcastDispatcher.registerReceiver(mBroadcastReceiver, filter, null, UserHandle.ALL);
     }
 
@@ -2137,6 +2180,20 @@ public class CentralSurfacesImpl implements CoreStartable, CentralSurfaces {
                 }
                 finishBarAnimations();
                 mNotificationsController.resetUserExpandedStates();
+            } else if (lineageos.content.Intent.ACTION_SCREEN_CAMERA_GESTURE.equals(action)) {
+                boolean userSetupComplete = Settings.Secure.getInt(mContext.getContentResolver(),
+                        Settings.Secure.USER_SETUP_COMPLETE, 0) != 0;
+                if (!userSetupComplete) {
+                    if (DEBUG) Log.d(TAG, String.format(
+                            "userSetupComplete = %s, ignoring camera launch gesture.",
+                            userSetupComplete));
+                    return;
+                }
+
+                // This gets executed before we will show Keyguard, so post it in order that the
+                // state is correct.
+                mMainExecutor.execute(() -> mCommandQueueCallbacks.onCameraLaunchGestureDetected(
+                        StatusBarManager.CAMERA_LAUNCH_SOURCE_SCREEN_GESTURE));
             }
             Trace.endSection();
         }
@@ -2873,13 +2930,15 @@ public class CentralSurfacesImpl implements CoreStartable, CentralSurfaces {
                     // Delay if we're waking up, not mid-doze animation (which means we are
                     // cancelling a sleep), from the power button, on a device with a power button
                     // FPS, and 'press to unlock' is required.
+                    FingerprintManager fpm = mFingerprintManager.get();
                     mShouldDelayWakeUpAnimation =
                             !isPulsing()
                                     && mStatusBarStateController.getDozeAmount() == 1f
                                     && mWakefulnessLifecycle.getLastWakeReason()
                                     == PowerManager.WAKE_REASON_POWER_BUTTON
-                                    && mFingerprintManager.get().isPowerbuttonFps()
-                                    && mFingerprintManager.get().hasEnrolledFingerprints()
+                                    && fpm != null
+                                    && fpm.isPowerbuttonFps()
+                                    && fpm.hasEnrolledFingerprints()
                                     && !touchToUnlockAnytime;
                     if (DEBUG_WAKEUP_DELAY) {
                         Log.d(TAG, "mShouldDelayWakeUpAnimation=" + mShouldDelayWakeUpAnimation);
@@ -3238,6 +3297,7 @@ public class CentralSurfacesImpl implements CoreStartable, CentralSurfaces {
     protected KeyguardManager mKeyguardManager;
     private final DeviceProvisionedController mDeviceProvisionedController;
 
+    private boolean mNeedsNavigationBar;
     private final NavigationBarController mNavigationBarController;
     private final AccessibilityFloatingMenuController mAccessibilityFloatingMenuController;
 
