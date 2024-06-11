@@ -97,7 +97,6 @@ import com.android.server.utils.EventLogger;
 import com.android.server.wm.ActivityTaskManagerInternal;
 
 import lineageos.providers.LineageSettings;
-import vendor.lineage.trust.V1_0.IUsbRestrict;
 
 import java.io.File;
 import java.io.FileDescriptor;
@@ -607,8 +606,6 @@ public class UsbDeviceManager implements ActivityTaskManagerInternal.ScreenObser
         protected int mCurrentGadgetHalVersion;
         protected boolean mPendingBootAccessoryHandshakeBroadcast;
 
-        private IUsbRestrict mUsbRestrictor;
-
         /**
          * The persistent property which stores whether adb is enabled or not.
          * May also contain vendor-specific default functions for testing purposes.
@@ -647,12 +644,6 @@ public class UsbDeviceManager implements ActivityTaskManagerInternal.ScreenObser
             boolean massStorageSupported = primary != null && primary.allowMassStorage();
             mUseUsbNotification = !massStorageSupported && mContext.getResources().getBoolean(
                     com.android.internal.R.bool.config_usbChargingMessage);
-
-            try {
-                mUsbRestrictor = IUsbRestrict.getService();
-            } catch (NoSuchElementException | RemoteException ignored) {
-                // This feature is not supported
-            }
         }
 
         public void sendMessage(int what, boolean arg) {
@@ -1064,7 +1055,9 @@ public class UsbDeviceManager implements ActivityTaskManagerInternal.ScreenObser
                     UsbPort port = (UsbPort) args.arg1;
                     UsbPortStatus status = (UsbPortStatus) args.arg2;
 
-                    if (status != null) {
+                    final boolean isDataForcedOff = status != null && status.getUsbDataStatus()
+                            == UsbPortStatus.DATA_STATUS_DISABLED_FORCE;
+                    if (status != null && !isDataForcedOff) {
                         mHostConnected = status.getCurrentDataRole() == DATA_ROLE_HOST;
                         mSourcePower = status.getCurrentPowerRole() == POWER_ROLE_SOURCE;
                         mSinkPower = status.getCurrentPowerRole() == POWER_ROLE_SINK;
@@ -1094,6 +1087,12 @@ public class UsbDeviceManager implements ActivityTaskManagerInternal.ScreenObser
                         mPowerBrickConnectionStatus = UsbPortStatus.POWER_BRICK_STATUS_UNKNOWN;
                     }
 
+                    if (isDataForcedOff) {
+                        mConnected = false;
+                        setEnabledFunctions(UsbManager.FUNCTION_NONE, false,
+                                /* operationId */ sUsbOperationCount.incrementAndGet());
+                    }
+
                     if (mHostConnected) {
                         if (!mUsbAccessoryConnected) {
                             mInHostModeWithNoAccessoryConnected = true;
@@ -1112,7 +1111,7 @@ public class UsbDeviceManager implements ActivityTaskManagerInternal.ScreenObser
                     args.recycle();
                     updateUsbNotification(false);
                     if (mBootCompleted) {
-                        if (mHostConnected || prevHostConnected) {
+                        if (mHostConnected || prevHostConnected || isDataForcedOff) {
                             updateUsbStateBroadcastIfNeeded(getAppliedFunctions(mCurrentFunctions));
                         }
                     } else {
@@ -1421,7 +1420,8 @@ public class UsbDeviceManager implements ActivityTaskManagerInternal.ScreenObser
                 titleRes = com.android.internal.R.string.usb_charging_notification_title;
                 id = SystemMessage.NOTE_USB_CHARGING;
             } else if (mSinkPower && mConnectedToDataDisabledPort
-                    && mPowerBrickConnectionStatus != UsbPortStatus.POWER_BRICK_STATUS_CONNECTED) {
+                    && mPowerBrickConnectionStatus ==
+                            UsbPortStatus.POWER_BRICK_STATUS_DISCONNECTED) {
                 // Show charging notification when USB Data is disabled on the port, and not
                 // connected to a wall charger.
                 titleRes = com.android.internal.R.string.usb_charging_notification_title;
@@ -1679,7 +1679,7 @@ public class UsbDeviceManager implements ActivityTaskManagerInternal.ScreenObser
 
         public void setTrustRestrictUsb() {
             final int restrictUsb = LineageSettings.Global.getInt(mContentResolver,
-                    LineageSettings.Global.TRUST_RESTRICT_USB, 1);
+                    LineageSettings.Global.TRUST_RESTRICT_USB, 0);
             // Effective immediately, ejects any connected USB devices.
             // If the restriction is set to "only when locked", only execute once USB is
             // disconnected and keyguard is showing, to avoid ejecting connected devices
@@ -1689,25 +1689,14 @@ public class UsbDeviceManager implements ActivityTaskManagerInternal.ScreenObser
                     || restrictUsb == 2;
 
             UsbManager usbManager = mContext.getSystemService(UsbManager.class);
-            boolean useUsbManager = false;
             try {
                 if (usbManager != null &&
                         usbManager.getUsbHalVersion() >= UsbManager.USB_HAL_V1_3) {
-                    useUsbManager = true;
+                    usbManager.enableUsbDataSignal(!shouldRestrict);
                 }
             } catch (RuntimeException ignore) {
                 // Can't get USB Hal version. Assume it's an unsupported version and
                 // don't try using UsbManager to toggle USB data.
-            }
-
-            if (!useUsbManager || !usbManager.enableUsbDataSignal(!shouldRestrict)) {
-                try {
-                    if (mUsbRestrictor != null) {
-                        mUsbRestrictor.setEnabled(shouldRestrict);
-                    }
-                } catch (RemoteException ignored) {
-                    // This feature is not supported
-                }
             }
         }
     }

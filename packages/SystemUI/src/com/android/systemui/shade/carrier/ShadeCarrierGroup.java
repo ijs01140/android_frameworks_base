@@ -23,8 +23,7 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.android.systemui.FontSizeUtils;
-import com.android.systemui.R;
+import com.android.systemui.res.R;
 
 /**
  * Displays Carrier name and network status in the shade header
@@ -59,7 +58,7 @@ public class ShadeCarrierGroup extends LinearLayout {
     }
 
     public void updateTextAppearance(@StyleRes int resId) {
-        FontSizeUtils.updateFontSizeFromStyle(getNoSimTextView(), resId);
+        getNoSimTextView().setTextAppearance(resId);
         getCarrier1View().updateTextAppearance(resId);
         getCarrier2View().updateTextAppearance(resId);
         getCarrier3View().updateTextAppearance(resId);

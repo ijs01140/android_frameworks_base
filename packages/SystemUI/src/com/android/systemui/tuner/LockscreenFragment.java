@@ -35,19 +35,21 @@ import android.widget.TextView;
 
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragment;
-import androidx.preference.SwitchPreference;
+import androidx.preference.SwitchPreferenceCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.RecyclerView.ViewHolder;
 
 import com.android.systemui.Dependency;
-import com.android.systemui.R;
+import com.android.systemui.res.R;
 import com.android.systemui.plugins.IntentButtonProvider.IntentButton;
 import com.android.systemui.statusbar.ScalingDrawableWrapper;
 import com.android.systemui.statusbar.phone.ExpandableIndicator;
 import com.android.systemui.statusbar.policy.ExtensionController.TunerFactory;
 import com.android.systemui.tuner.ShortcutParser.Shortcut;
 import com.android.systemui.tuner.TunerService.Tunable;
+import com.android.tools.r8.keepanno.annotations.KeepTarget;
+import com.android.tools.r8.keepanno.annotations.UsesReflection;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -69,6 +71,9 @@ public class LockscreenFragment extends PreferenceFragment {
     private TunerService mTunerService;
     private Handler mHandler;
 
+    // aapt doesn't generate keep rules for android:fragment references in <Preference> tags, so
+    // explicitly declare references per usage in `R.xml.lockscreen_settings`. See b/120445169.
+    @UsesReflection(@KeepTarget(classConstant = ShortcutPicker.class))
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         mTunerService = Dependency.get(TunerService.class);
@@ -86,7 +91,7 @@ public class LockscreenFragment extends PreferenceFragment {
 
     private void setupGroup(String buttonSetting, String unlockKey) {
         Preference shortcut = findPreference(buttonSetting);
-        SwitchPreference unlock = (SwitchPreference) findPreference(unlockKey);
+        SwitchPreferenceCompat unlock = (SwitchPreferenceCompat) findPreference(unlockKey);
         addTunable((k, v) -> {
             boolean visible = !TextUtils.isEmpty(v);
             unlock.setVisible(visible);
