@@ -29,11 +29,10 @@ import static android.app.NotificationManager.IMPORTANCE_LOW;
 import static android.app.NotificationManager.IMPORTANCE_MAX;
 import static android.app.NotificationManager.IMPORTANCE_NONE;
 import static android.app.NotificationManager.IMPORTANCE_UNSPECIFIED;
-import static android.app.NotificationManager.VISIBILITY_NO_OVERRIDE;
+import static android.util.StatsLog.ANNOTATION_ID_IS_UID;
 import static android.content.ContentResolver.SCHEME_ANDROID_RESOURCE;
 import static android.content.ContentResolver.SCHEME_CONTENT;
 import static android.content.ContentResolver.SCHEME_FILE;
-import static android.util.StatsLog.ANNOTATION_ID_IS_UID;
 
 import static com.android.internal.util.FrameworkStatsLog.PACKAGE_NOTIFICATION_CHANNEL_PREFERENCES;
 import static com.android.os.AtomsProto.PackageNotificationChannelPreferences.CHANNEL_ID_FIELD_NUMBER;
@@ -57,7 +56,6 @@ import static junit.framework.Assert.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -93,8 +91,8 @@ import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.Process;
+import android.os.Bundle;
 import android.os.RemoteCallback;
 import android.os.RemoteException;
 import android.os.UserHandle;
@@ -119,6 +117,7 @@ import androidx.test.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.server.UiServiceTestCase;
+import com.android.server.uri.UriGrantsManagerInternal;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -589,8 +588,7 @@ public class PreferencesHelperTest extends UiServiceTestCase {
         assertTrue(foundChannel2Group);
     }
 
-    @Test
-    public void testBackupXml_backupCanonicalizedSoundUri() throws Exception {
+    @Test    public void testBackupXml_backupCanonicalizedSoundUri() throws Exception {
         NotificationChannel channel =
                 new NotificationChannel("id", "name", IMPORTANCE_LOW);
         channel.setSound(SOUND_URI, mAudioAttributes);
@@ -1666,7 +1664,20 @@ public class PreferencesHelperTest extends UiServiceTestCase {
     }
 
     @Test
-    public void testCreateChannel_noSoundUriPermission_contentSchemeVerified() {
+    public void testCreateChannel_hasSoundUriPermission_useCustomSound() {
+        final Uri sound = Uri.parse(SCHEME_CONTENT + "://media/test/sound/uri");
+
+        final NotificationChannel channel = new NotificationChannel("id2", "name2",
+                NotificationManager.IMPORTANCE_DEFAULT);
+        channel.setSound(sound, mAudioAttributes);
+        mHelper.createNotificationChannel(PKG_N_MR1, UID_N_MR1, channel, true, false);
+        assertThat(mHelper.getNotificationChannel(PKG_N_MR1, UID_N_MR1, channel.getId(), true)
+                .getSound()).isEqualTo(sound);
+    }
+
+
+    @Test
+    public void testCreateChannel_noSoundUriPermission_replaceWithDefaultSound() {
         final Uri sound = Uri.parse(SCHEME_CONTENT + "://media/test/sound/uri");
 
         doThrow(new SecurityException("no access")).when(mUgmInternal)
@@ -1676,12 +1687,11 @@ public class PreferencesHelperTest extends UiServiceTestCase {
         final NotificationChannel channel = new NotificationChannel("id2", "name2",
                 NotificationManager.IMPORTANCE_DEFAULT);
         channel.setSound(sound, mAudioAttributes);
-
-        assertThrows(SecurityException.class,
-                () -> mHelper.createNotificationChannel(PKG_N_MR1, UID_N_MR1, channel,
-                    true, false));
+        mHelper.createNotificationChannel(PKG_N_MR1, UID_N_MR1, channel, true, false);
         assertThat(mHelper.getNotificationChannel(PKG_N_MR1, UID_N_MR1, channel.getId(), true))
-                .isNull();
+                .isNotNull();
+        assertThat(mHelper.getNotificationChannel(PKG_N_MR1, UID_N_MR1, channel.getId(), true)
+                .getSound()).isEqualTo(Settings.System.DEFAULT_NOTIFICATION_URI);
     }
 
     @Test
@@ -3432,7 +3442,7 @@ public class PreferencesHelperTest extends UiServiceTestCase {
     @Test
     public void testDeleted_noTime() throws Exception {
         mHelper = new PreferencesHelper(getContext(), mPm, mHandler, mMockZenModeHelper, mLogger,
-                mAppOpsManager, mUgmInternal, mStatsEventBuilderFactory);
+                mAppOpsManager, mStatsEventBuilderFactory);
 
         final String xml = "<ranking version=\"1\">\n"
                 + "<package name=\"" + PKG_O + "\" uid=\"" + UID_O + "\" >\n"
@@ -3451,7 +3461,7 @@ public class PreferencesHelperTest extends UiServiceTestCase {
     @Test
     public void testDeleted_twice() throws Exception {
         mHelper = new PreferencesHelper(getContext(), mPm, mHandler, mMockZenModeHelper, mLogger,
-                mAppOpsManager, mUgmInternal, mStatsEventBuilderFactory);
+                mAppOpsManager, mStatsEventBuilderFactory);
 
         mHelper.createNotificationChannel(
                 PKG_P, UID_P, new NotificationChannel("id", "id", 2), true, false);
@@ -3462,7 +3472,7 @@ public class PreferencesHelperTest extends UiServiceTestCase {
     @Test
     public void testDeleted_recentTime() throws Exception {
         mHelper = new PreferencesHelper(getContext(), mPm, mHandler, mMockZenModeHelper, mLogger,
-                mAppOpsManager, mUgmInternal, mStatsEventBuilderFactory);
+                mAppOpsManager, mStatsEventBuilderFactory);
 
         mHelper.createNotificationChannel(
                 PKG_P, UID_P, new NotificationChannel("id", "id", 2), true, false);
@@ -3479,7 +3489,7 @@ public class PreferencesHelperTest extends UiServiceTestCase {
                 null);
         parser.nextTag();
         mHelper = new PreferencesHelper(getContext(), mPm, mHandler, mMockZenModeHelper, mLogger,
-                mAppOpsManager, mUgmInternal, mStatsEventBuilderFactory);
+                mAppOpsManager, mStatsEventBuilderFactory);
         mHelper.readXml(parser, true, UserHandle.USER_SYSTEM);
 
         NotificationChannel nc = mHelper.getNotificationChannel(PKG_P, UID_P, "id", true);
@@ -3490,7 +3500,7 @@ public class PreferencesHelperTest extends UiServiceTestCase {
     @Test
     public void testUnDelete_time() throws Exception {
         mHelper = new PreferencesHelper(getContext(), mPm, mHandler, mMockZenModeHelper, mLogger,
-                mAppOpsManager, mUgmInternal, mStatsEventBuilderFactory);
+                mAppOpsManager, mStatsEventBuilderFactory);
 
         mHelper.createNotificationChannel(
                 PKG_P, UID_P, new NotificationChannel("id", "id", 2), true, false);
@@ -3509,7 +3519,7 @@ public class PreferencesHelperTest extends UiServiceTestCase {
     @Test
     public void testDeleted_longTime() throws Exception {
         mHelper = new PreferencesHelper(getContext(), mPm, mHandler, mMockZenModeHelper, mLogger,
-                mAppOpsManager, mUgmInternal, mStatsEventBuilderFactory);
+                mAppOpsManager, mStatsEventBuilderFactory);
 
         long time = System.currentTimeMillis() - (DateUtils.DAY_IN_MILLIS * 30);
 

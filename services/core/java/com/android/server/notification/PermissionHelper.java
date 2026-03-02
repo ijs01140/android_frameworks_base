@@ -13,16 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.android.server.notification;
 
 import android.content.ContentProvider;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.IPackageManager;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.UserHandle;
+import android.permission.IPermissionManager;
 
+import com.android.server.pm.permission.PermissionManagerServiceInternal;
 import com.android.server.uri.UriGrantsManagerInternal;
 
 /**
@@ -30,11 +33,19 @@ import com.android.server.uri.UriGrantsManagerInternal;
  */
 public final class PermissionHelper {
     private static final String TAG = "PermissionHelper";
+    private final PermissionManagerServiceInternal mPmi;
+    private final IPackageManager mPackageManager;
+    private final IPermissionManager mPermManager;
+    public PermissionHelper(PermissionManagerServiceInternal pmi, IPackageManager packageManager,
+            IPermissionManager permManager) {
+        mPmi = pmi;
+        mPackageManager = packageManager;
+        mPermManager = permManager;
+    }
 
     static void grantUriPermission(final UriGrantsManagerInternal ugmInternal, Uri uri,
             int sourceUid) {
         if (uri == null || !ContentResolver.SCHEME_CONTENT.equals(uri.getScheme())) return;
-
         Binder.withCleanCallingIdentity(() -> {
             // This will throw a SecurityException if the caller can't grant.
             ugmInternal.checkGrantUriPermission(sourceUid, null,
